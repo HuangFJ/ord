@@ -1,6 +1,7 @@
 use super::*;
 
 pub mod balances;
+pub mod bdid;
 pub mod decode;
 pub mod epochs;
 pub mod find;
@@ -48,6 +49,8 @@ pub(crate) enum Subcommand {
   Traits(traits::Traits),
   #[command(about = "Wallet commands")]
   Wallet(wallet::Wallet),
+  #[command(about = "BDID server commands")]
+  Bdid(bdid::JServerArgs),
 }
 
 impl Subcommand {
@@ -73,6 +76,7 @@ impl Subcommand {
       Self::Teleburn(teleburn) => teleburn.run(),
       Self::Traits(traits) => traits.run(),
       Self::Wallet(wallet) => wallet.run(options),
+      Self::Bdid(jserver_args) => bdid::run(jserver_args, bdid::JsonRealServer::new(options)?),
     }
   }
 }

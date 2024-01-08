@@ -63,8 +63,23 @@ sysinfo = "0.30.3"
 tempfile = "3.2.0"
 tokio = { version = "1.17.0", features = ["rt-multi-thread"] }
 tokio-stream = "0.1.9"
-tokio-util = {version = "0.7.3", features = ["compat"] }
-tower-http = { version = "0.4.0", features = ["compression-br", "compression-gzip", "cors", "set-header"] }
+tokio-util = { version = "0.7.3", features = ["compat"] }
+tower-http = { version = "0.4.0", features = [
+    "compression-br",
+    "compression-gzip",
+    "cors",
+    "set-header",
+] }
+
+warp = { version = "0.3.2", features = ["tls"] }
+erased-serde = "0.3"
+bytes = "1.4.0"
+polars = { version = "0.33.2", features = [
+    "polars-io",
+    "parquet",
+    "dtype-struct",
+] }
+rayon = "1.5.1"
 
 [dev-dependencies]
 criterion = "0.5.1"

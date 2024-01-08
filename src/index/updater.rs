@@ -6,6 +6,7 @@ use {
   tokio::sync::mpsc::{error::TryRecvError, Receiver, Sender},
 };
 
+mod bdid_updater;
 mod inscription_updater;
 mod rune_updater;
 
@@ -450,6 +451,8 @@ impl<'index> Updater<'_> {
       value_receiver,
     };
 
+    let mut bdid_updater = bdid_updater::BdidUpdater::new(self.index, self.height)?;
+
     if self.index.index_sats {
       let mut sat_to_satpoint = wtx.open_table(SAT_TO_SATPOINT)?;
       let mut outpoint_to_sat_ranges = wtx.open_table(OUTPOINT_TO_SAT_RANGES)?;
@@ -496,6 +499,7 @@ impl<'index> Updater<'_> {
           &mut sat_ranges_written,
           &mut outputs_in_block,
           &mut inscription_updater,
+          &mut bdid_updater,
           index_inscriptions,
         )?;
 
@@ -511,6 +515,7 @@ impl<'index> Updater<'_> {
           &mut sat_ranges_written,
           &mut outputs_in_block,
           &mut inscription_updater,
+          &mut bdid_updater,
           index_inscriptions,
         )?;
       }
@@ -542,7 +547,7 @@ impl<'index> Updater<'_> {
       }
     } else if index_inscriptions {
       for (tx, txid) in block.txdata.iter().skip(1).chain(block.txdata.first()) {
-        inscription_updater.index_envelopes(tx, *txid, None)?;
+        inscription_updater.index_envelopes(tx, *txid, None, &mut bdid_updater)?;
       }
     }
 
@@ -632,6 +637,7 @@ impl<'index> Updater<'_> {
       (Instant::now() - start).as_millis(),
     );
 
+    bdid_updater.commit()?;
     Ok(())
   }
 
@@ -644,10 +650,11 @@ impl<'index> Updater<'_> {
     sat_ranges_written: &mut u64,
     outputs_traversed: &mut u64,
     inscription_updater: &mut InscriptionUpdater,
+    bdid_updater: &mut bdid_updater::BdidUpdater,
     index_inscriptions: bool,
   ) -> Result {
     if index_inscriptions {
-      inscription_updater.index_envelopes(tx, txid, Some(input_sat_ranges))?;
+      inscription_updater.index_envelopes(tx, txid, Some(input_sat_ranges), bdid_updater)?;
     }
 
     for (vout, output) in tx.output.iter().enumerate() {

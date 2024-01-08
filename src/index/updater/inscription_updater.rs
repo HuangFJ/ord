@@ -15,13 +15,13 @@ enum Curse {
 
 #[derive(Debug, Clone)]
 pub(super) struct Flotsam {
-  inscription_id: InscriptionId,
-  offset: u64,
-  origin: Origin,
+  pub(super) inscription_id: InscriptionId,
+  pub(super) offset: u64,
+  pub(super) origin: Origin,
 }
 
 #[derive(Debug, Clone)]
-enum Origin {
+pub(super) enum Origin {
   New {
     cursed: bool,
     fee: u64,
@@ -72,6 +72,7 @@ impl<'a, 'db, 'tx> InscriptionUpdater<'a, 'db, 'tx> {
     tx: &Transaction,
     txid: Txid,
     input_sat_ranges: Option<&VecDeque<(u64, u64)>>,
+    bdid_updater: &mut bdid_updater::BdidUpdater,
   ) -> Result {
     let mut floating_inscriptions = Vec::new();
     let mut id_counter = 0;
@@ -273,7 +274,7 @@ impl<'a, 'db, 'tx> InscriptionUpdater<'a, 'db, 'tx> {
     }
 
     floating_inscriptions.sort_by_key(|flotsam| flotsam.offset);
-    let mut inscriptions = floating_inscriptions.into_iter().peekable();
+    let mut inscriptions = floating_inscriptions.clone().into_iter().peekable();
 
     let mut range_to_vout = BTreeMap::new();
     let mut new_locations = Vec::new();
@@ -332,7 +333,7 @@ impl<'a, 'db, 'tx> InscriptionUpdater<'a, 'db, 'tx> {
         _ => new_satpoint,
       };
 
-      self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint)?;
+      self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint, bdid_updater)?;
     }
 
     if is_coinbase {
@@ -341,18 +342,25 @@ impl<'a, 'db, 'tx> InscriptionUpdater<'a, 'db, 'tx> {
           outpoint: OutPoint::null(),
           offset: self.lost_sats + flotsam.offset - output_value,
         };
-        self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint)?;
+        self.update_inscription_location(input_sat_ranges, flotsam, new_satpoint, bdid_updater)?;
       }
       self.lost_sats += self.reward - output_value;
-      Ok(())
     } else {
       self.flotsam.extend(inscriptions.map(|flotsam| Flotsam {
         offset: self.reward + flotsam.offset - output_value,
         ..flotsam
       }));
       self.reward += total_input_value - output_value;
-      Ok(())
     }
+
+    bdid_updater.capture_transaction_inscriptions(
+      &floating_inscriptions,
+      &txid,
+      is_coinbase,
+      self.id_to_sequence_number,
+      self.sequence_number_to_entry,
+    )?;
+    Ok(())
   }
 
   fn calculate_sat(
@@ -379,6 +387,7 @@ impl<'a, 'db, 'tx> InscriptionUpdater<'a, 'db, 'tx> {
     input_sat_ranges: Option<&VecDeque<(u64, u64)>>,
     flotsam: Flotsam,
     new_satpoint: SatPoint,
+    bdid_updater: &mut bdid_updater::BdidUpdater,
   ) -> Result {
     let inscription_id = flotsam.inscription_id;
     let (unbound, sequence_number) = match flotsam.origin {
@@ -541,6 +550,9 @@ impl<'a, 'db, 'tx> InscriptionUpdater<'a, 'db, 'tx> {
       .sequence_number_to_satpoint
       .insert(sequence_number, &satpoint)?;
 
+    bdid_updater
+      .inscription_new_satpoints
+      .insert(flotsam.inscription_id, SatPoint::load(satpoint));
     Ok(())
   }
 }

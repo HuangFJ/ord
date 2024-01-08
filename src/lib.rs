@@ -114,6 +114,7 @@ macro_rules! tprintln {
 }
 
 mod arguments;
+pub mod bdid;
 mod blocktime;
 mod chain;
 mod config;
