@@ -553,7 +553,7 @@ mod get_block_inscription_events {
 mod get_inscription_entry {
   use super::*;
 
-  pub const NAME: &'static str = "inscription.enry";
+  pub const NAME: &'static str = "inscription.entry";
 
   #[derive(Deserialize)]
   struct Req {

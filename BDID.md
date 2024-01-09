@@ -78,3 +78,17 @@ Environment="RUST_LOG=info"
 Environment="POSTGRES_URL=postgres://user:pwd@127.0.0.1:5432/did?sslmode=disable"
 ExecStart=ord --config ord.yaml --rpc-url http://127.0.0.1:8332 --data-dir data --index-sats --index-transactions bdid --address 0.0.0.0:8080
 ```
+
+### jsonrpc methods
+```
+block.count
+block.height
+block.hash
+block.inscription_events
+inscription.entry
+inscription.content
+inscription.satpoint
+inscription.output
+utxo.inscriptions
+utxo.info
+```
