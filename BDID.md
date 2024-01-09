@@ -72,9 +72,9 @@ fn index_envelopes() {
 }
 ```
 
-
-```
-Environment="POSTGRES_URL=postgres://did:d6054a679a1b0b14@127.0.0.1:5432/did?sslmode=disable"
-
-ord --config /root/ord-data/ord.yaml --rpc-url http://127.0.0.1:8332 --data-dir /root/ord-data/ --index-sats --index-transaction bdid --address 0.0.0.0:8080
+### /etc/systemd/system/ord.service
+```shell
+Environment="RUST_LOG=info"
+Environment="POSTGRES_URL=postgres://user:pwd@127.0.0.1:5432/did?sslmode=disable"
+ExecStart=ord --config ord.yaml --rpc-url http://127.0.0.1:8332 --data-dir data --index-sats --index-transactions bdid --address 0.0.0.0:8080
 ```
